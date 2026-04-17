@@ -381,8 +381,7 @@ public class ModernSignUpFrame extends JFrame {
         }
 
         // Register user
-        UserDAO userDAO = new UserDAO();
-        boolean success = userDAO.registerUser(username, email, password, fullName);
+        boolean success = UserDAO.registerUser(username, email, password, fullName);
 
         if (success) {
             messageLabel.setText("Account created successfully!");

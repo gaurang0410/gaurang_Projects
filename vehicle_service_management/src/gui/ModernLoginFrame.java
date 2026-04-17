@@ -358,8 +358,7 @@ public class ModernLoginFrame extends JFrame {
             return;
         }
 
-        UserDAO userDAO = new UserDAO();
-        org.json.JSONObject result = userDAO.authenticateUserWithDetails(user, pass);
+        org.json.JSONObject result = UserDAO.authenticateUserWithDetails(user, pass);
         
         if (result != null && result.has("user_id") && result.getInt("user_id") > 0) {
             int userId = result.getInt("user_id");
