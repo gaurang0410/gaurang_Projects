@@ -7,6 +7,8 @@ import java.awt.event.ActionListener;
 import dao.UserDAO;
 
 public class LoginFrame extends JFrame {
+    private static final long serialVersionUID = 1L;
+
     private JTextField userField;
     private JPasswordField passField;
     private JTextField passVisibleField;
@@ -62,7 +64,7 @@ public class LoginFrame extends JFrame {
         // Username Field
         userField = new JTextField();
         userField.setBounds(50, 105, 400, 28);
-        userField.setFont(new Font("Arial", Font.PLAIN, 12));
+        UITheme.styleInput(userField);
         panel.add(userField);
 
         // Password Label
@@ -74,13 +76,13 @@ public class LoginFrame extends JFrame {
         // Password Field (hidden)
         passField = new JPasswordField();
         passField.setBounds(50, 170, 350, 28);
-        passField.setFont(new Font("Arial", Font.PLAIN, 12));
+        UITheme.styleInput(passField);
         panel.add(passField);
 
         // Password Visible Field (shown when toggle is on)
         passVisibleField = new JTextField();
         passVisibleField.setBounds(50, 170, 350, 28);
-        passVisibleField.setFont(new Font("Arial", Font.PLAIN, 12));
+        UITheme.styleInput(passVisibleField);
         passVisibleField.setVisible(false);
         panel.add(passVisibleField);
 
@@ -143,19 +145,6 @@ public class LoginFrame extends JFrame {
         });
         panel.add(exitBtn);
 
-        // Info Labels
-        JLabel infoLabel1 = new JLabel("Test Account: Username = admin, Password = admin");
-        infoLabel1.setFont(new Font("Arial", Font.ITALIC, 9));
-        infoLabel1.setForeground(new Color(120, 120, 120));
-        infoLabel1.setBounds(50, 290, 400, 15);
-        panel.add(infoLabel1);
-
-        JLabel infoLabel2 = new JLabel("New user? Click 'Create Account' to sign up with your real email");
-        infoLabel2.setFont(new Font("Arial", Font.ITALIC, 9));
-        infoLabel2.setForeground(new Color(120, 120, 120));
-        infoLabel2.setBounds(50, 310, 400, 15);
-        panel.add(infoLabel2);
-
         add(panel);
     }
 
@@ -207,12 +196,12 @@ public class LoginFrame extends JFrame {
             messageLabel.setText("Verifying credentials...");
             messageLabel.setForeground(new Color(100, 100, 100));
             
-            org.json.JSONObject result = UserDAO.authenticateUserWithDetails(username, password);
-            if (result != null && result.optBoolean("success", false)) {
+            model.User result = UserDAO.authenticateUserWithDetails(username, password);
+            if (result != null) {
                 messageLabel.setText("Login Successful! Opening dashboard...");
                 messageLabel.setForeground(new Color(76, 175, 80));
-                int userId = result.optInt("user_id", -1);
-                String fullName = result.optString("full_name", username);
+                int userId = result.getUserId();
+                String fullName = result.getFullName();
                 
                 // Give time for the user to see the success message
                 Timer timer = new Timer(1000, e -> {

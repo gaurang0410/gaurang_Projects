@@ -7,6 +7,8 @@ import dao.ServiceDAO;
 import dao.VehicleDAO;
 import dao.CustomerDAO;
 import java.util.List;
+import java.time.LocalDate;
+import java.time.temporal.ChronoUnit;
 
 public class ServiceManager {
     private ServiceDAO serviceDAO;
@@ -111,5 +113,116 @@ public class ServiceManager {
         bill.append("================================\n");
 
         return bill.toString();
+    }
+
+    public List<Service> getServicesByCustomerId(int customerId) {
+        List<Service> allServices = serviceDAO.getAllServices();
+        List<Service> customerServices = new java.util.ArrayList<>();
+        VehicleDAO vDao = new VehicleDAO();
+        List<Vehicle> customerVehicles = vDao.getVehiclesByCustomerId(customerId);
+        
+        java.util.Set<Integer> vehicleIds = new java.util.HashSet<>();
+        for (Vehicle v : customerVehicles) {
+            vehicleIds.add(v.getVehicleId());
+        }
+        
+        for (Service s : allServices) {
+            if (vehicleIds.contains(s.getVehicleId())) {
+                customerServices.add(s);
+            }
+        }
+        return customerServices;
+    }
+
+    public String getSmartRecommendationForCustomer(int customerId) {
+        List<Service> services = getServicesByCustomerId(customerId);
+        if (services.isEmpty()) {
+            return "No service history found. General check-up recommended.";
+        }
+
+        Service latest = null;
+        LocalDate latestDate = null;
+        for (Service service : services) {
+            LocalDate parsed = tryParseDate(service.getServiceDate());
+            if (parsed != null && (latestDate == null || parsed.isAfter(latestDate))) {
+                latestDate = parsed;
+                latest = service;
+            }
+        }
+
+        if (latestDate == null || latest == null) {
+            return "Regular maintenance recommended for optimal performance.";
+        }
+
+        long months = ChronoUnit.MONTHS.between(latestDate, LocalDate.now());
+        if (months >= 6) {
+            return "Oil Change recommended (last done " + months + " month(s) ago).";
+        }
+        if (months >= 3) {
+            return "General inspection recommended (last service " + months + " month(s) ago).";
+        }
+        return "Next routine service due in about " + (6 - months) + " month(s).";
+    }
+
+    public String getServiceReminderForCustomer(int customerId) {
+        List<Service> services = getServicesByCustomerId(customerId);
+        if (services.isEmpty()) {
+            return "No previous service record. Book your first service.";
+        }
+
+        LocalDate latestDate = null;
+        for (Service service : services) {
+            if (!"Completed".equalsIgnoreCase(service.getStatus())) {
+                continue;
+            }
+            LocalDate parsed = tryParseDate(service.getServiceDate());
+            if (parsed != null && (latestDate == null || parsed.isAfter(latestDate))) {
+                latestDate = parsed;
+            }
+        }
+
+        if (latestDate == null) {
+            return "No completed service found yet. Complete one service to enable reminders.";
+        }
+
+        long daysSince = ChronoUnit.DAYS.between(latestDate, LocalDate.now());
+        if (daysSince > 180) {
+            return "Overdue: your last completed service was " + daysSince + " day(s) ago.";
+        }
+        if (daysSince > 90) {
+            return "Reminder: service is due soon (" + daysSince + " day(s) since last completion).";
+        }
+        long nextDueIn = 90 - daysSince;
+        return "On track: next routine service due in " + Math.max(nextDueIn, 0) + " day(s).";
+    }
+
+    public int getReminderSeverityForCustomer(int customerId) {
+        List<Service> services = getServicesByCustomerId(customerId);
+        LocalDate latestDate = null;
+        for (Service service : services) {
+            if (!"Completed".equalsIgnoreCase(service.getStatus())) {
+                continue;
+            }
+            LocalDate parsed = tryParseDate(service.getServiceDate());
+            if (parsed != null && (latestDate == null || parsed.isAfter(latestDate))) {
+                latestDate = parsed;
+            }
+        }
+        if (latestDate == null) return 0;
+        long daysSince = ChronoUnit.DAYS.between(latestDate, LocalDate.now());
+        if (daysSince > 180) return 2;
+        if (daysSince > 90) return 1;
+        return 0;
+    }
+
+    private LocalDate tryParseDate(String value) {
+        if (value == null || value.trim().isEmpty()) {
+            return null;
+        }
+        try {
+            return LocalDate.parse(value.trim());
+        } catch (Exception ignored) {
+            return null;
+        }
     }
 }

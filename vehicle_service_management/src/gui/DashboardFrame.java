@@ -5,6 +5,8 @@ import javax.swing.border.EmptyBorder;
 import java.awt.*;
 
 public class DashboardFrame extends JFrame {
+    private static final long serialVersionUID = 1L;
+
     private static final Color PRIMARY_COLOR = new Color(20, 150, 230);      // Modern blue
     private static final Color BACKGROUND_COLOR = new Color(240, 242, 245);  // Light gray
     private static final Color CARD_COLOR = Color.WHITE;
@@ -67,8 +69,10 @@ public class DashboardFrame extends JFrame {
         // Logout Button
         JButton logoutBtn = createButton("Logout", new Color(220, 50, 50));
         logoutBtn.addActionListener(e -> {
-            this.dispose();
-            new LoginFrame();
+            if (UITheme.showConfirmDialog(this, "Confirm Logout", "Are you sure you want to logout?")) {
+                this.dispose();
+                new LoginFrame();
+            }
         });
         headerPanel.add(logoutBtn, BorderLayout.EAST);
 

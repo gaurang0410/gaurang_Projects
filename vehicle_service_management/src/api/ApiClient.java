@@ -1,9 +1,10 @@
 package api;
 
-import org.json.JSONArray;
 import org.json.JSONObject;
 import java.io.*;
 import java.net.HttpURLConnection;
+import java.net.ConnectException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.nio.charset.StandardCharsets;
 
@@ -18,55 +19,78 @@ public class ApiClient {
      * Make a GET request to the API
      */
     public static JSONObject get(String endpoint) throws Exception {
-        URL url = new URL(BASE_URL + endpoint);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("GET");
-        conn.setConnectTimeout(TIMEOUT);
-        conn.setReadTimeout(TIMEOUT);
-
-        int responseCode = conn.getResponseCode();
-        String response = readResponse(conn, responseCode);
-
-        if (responseCode == 200) {
-            return new JSONObject(response);
-        } else {
-            try {
-                JSONObject error = new JSONObject(response);
-                throw new Exception(error.optString("error", "API Error: " + responseCode));
-            } catch (Exception e) {
-                throw new Exception("API Error (" + responseCode + "): " + response);
-            }
-        }
+        return request("GET", endpoint, null);
     }
 
     /**
      * Make a POST request to the API
      */
     public static JSONObject post(String endpoint, JSONObject data) throws Exception {
-        URL url = new URL(BASE_URL + endpoint);
-        HttpURLConnection conn = (HttpURLConnection) url.openConnection();
-        conn.setRequestMethod("POST");
-        conn.setRequestProperty("Content-Type", "application/json");
-        conn.setConnectTimeout(TIMEOUT);
-        conn.setReadTimeout(TIMEOUT);
-        conn.setDoOutput(true);
+        return request("POST", endpoint, data);
+    }
 
-        try (OutputStream os = conn.getOutputStream()) {
-            byte[] input = data.toString().getBytes(StandardCharsets.UTF_8);
-            os.write(input, 0, input.length);
-        }
+    /**
+     * Make a PUT request to the API
+     */
+    public static JSONObject put(String endpoint, JSONObject data) throws Exception {
+        return request("PUT", endpoint, data);
+    }
 
-        int responseCode = conn.getResponseCode();
-        String response = readResponse(conn, responseCode);
+    /**
+     * Make a DELETE request to the API
+     */
+    public static JSONObject delete(String endpoint) throws Exception {
+        return request("DELETE", endpoint, null);
+    }
 
-        if (responseCode == 200) {
-            return new JSONObject(response);
-        } else {
+    private static JSONObject request(String method, String endpoint, JSONObject data) throws Exception {
+        HttpURLConnection conn = null;
+        try {
+            URL url = new URL(BASE_URL + endpoint);
+            conn = (HttpURLConnection) url.openConnection();
+            conn.setRequestMethod(method);
+            conn.setConnectTimeout(TIMEOUT);
+            conn.setReadTimeout(TIMEOUT);
+            conn.setRequestProperty("Accept", "application/json");
+
+            if (data != null) {
+                conn.setRequestProperty("Content-Type", "application/json");
+                conn.setDoOutput(true);
+                try (OutputStream os = conn.getOutputStream()) {
+                    byte[] input = data.toString().getBytes(StandardCharsets.UTF_8);
+                    os.write(input, 0, input.length);
+                }
+            }
+
+            int responseCode = conn.getResponseCode();
+            String response = readResponse(conn, responseCode);
+            
+            System.out.println("API " + method + " " + endpoint + " Response: " + response);
+
+            if (responseCode >= 200 && responseCode < 300) {
+                if (response == null || response.trim().isEmpty()) {
+                    return new JSONObject().put("success", true);
+                }
+                return new JSONObject(response);
+            }
+
+            String message = response;
             try {
                 JSONObject error = new JSONObject(response);
-                throw new Exception(error.optString("error", "API Error: " + responseCode));
-            } catch (Exception e) {
-                throw new Exception("API Error (" + responseCode + "): " + response);
+                message = error.optString("error", "API Error: " + responseCode);
+            } catch (Exception ignored) {
+                if (message == null || message.isEmpty()) {
+                    message = "API Error: " + responseCode;
+                }
+            }
+            throw new Exception(message);
+        } catch (ConnectException e) {
+            throw new Exception("Unable to connect to API server. Please ensure the backend is running.");
+        } catch (SocketTimeoutException e) {
+            throw new Exception("API request timed out. Please try again.");
+        } finally {
+            if (conn != null) {
+                conn.disconnect();
             }
         }
     }
@@ -92,10 +116,12 @@ public class ApiClient {
 
     /**
      * Check if API server is running
+     * NOTE: Health endpoint is at /health (root), not /api/health
      */
     public static boolean isServerRunning() {
         try {
-            URL url = new URL(BASE_URL + "/health");
+            // Health endpoint is registered at /health, not under /api
+            URL url = new URL("http://localhost:8080/health");
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");
             conn.setConnectTimeout(2000);

@@ -22,31 +22,36 @@ public class CustomerDAO {
             data.put("address", customer.getAddress());
             
             JSONObject response = ApiClient.post("/customers", data);
-            System.out.println("✓ Customer added: " + customer.getName());
-            return response.optBoolean("success", true);
+            return response.optBoolean("success", false);
         } catch (Exception e) {
-            System.err.println("✗ Error adding customer: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("Error adding customer: " + e.getMessage());
             return false;
         }
     }
 
-    // Update Customer (handled locally, can be extended)
+    // Update Customer via API
     public boolean updateCustomer(Customer customer) {
-        // API update not implemented yet, using direct DB for now
         try {
-            return true; // Placeholder
+            JSONObject data = new JSONObject();
+            data.put("customer_id", customer.getCustomerId());
+            data.put("name", customer.getName());
+            data.put("phone", customer.getPhone());
+            data.put("email", customer.getEmail());
+            data.put("address", customer.getAddress());
+            
+            JSONObject response = ApiClient.put("/customers", data);
+            return response.optBoolean("success", false);
         } catch (Exception e) {
             System.err.println("Error updating customer: " + e.getMessage());
             return false;
         }
     }
 
-    // Delete Customer (handled locally, can be extended)
+    // Delete Customer via API
     public boolean deleteCustomer(int customerId) {
-        // API delete not implemented yet
         try {
-            return true; // Placeholder
+            JSONObject response = ApiClient.delete("/customers?id=" + customerId);
+            return response.optBoolean("success", false);
         } catch (Exception e) {
             System.err.println("Error deleting customer: " + e.getMessage());
             return false;
@@ -57,18 +62,16 @@ public class CustomerDAO {
     public Customer getCustomerById(int customerId) {
         try {
             JSONObject response = ApiClient.get("/customers");
-            JSONArray customers = response.getJSONArray("data");
-            
-            for (int i = 0; i < customers.length(); i++) {
-                JSONObject cust = customers.getJSONObject(i);
-                if (cust.getInt("customer_id") == customerId) {
-                    return new Customer(
-                        cust.getInt("customer_id"),
-                        cust.getString("name"),
-                        cust.getString("phone"),
-                        cust.getString("email"),
-                        cust.getString("address")
-                    );
+            if (response != null && response.has("data")) {
+                JSONArray array = response.getJSONArray("data");
+                for (int i = 0; i < array.length(); i++) {
+                    JSONObject c = array.getJSONObject(i);
+                    if (c.optInt("customer_id", -1) == customerId) {
+                        return new Customer(
+                            c.optInt("customer_id", -1), c.optString("name"),
+                            c.optString("phone"), c.optString("email"), c.optString("address")
+                        );
+                    }
                 }
             }
         } catch (Exception e) {
@@ -77,52 +80,34 @@ public class CustomerDAO {
         return null;
     }
 
-    // Get All Customers via API
+    // Get All Customers
     public List<Customer> getAllCustomers() {
-        List<Customer> customers = new ArrayList<>();
+        List<Customer> list = new ArrayList<>();
         try {
             JSONObject response = ApiClient.get("/customers");
-            JSONArray customerArray = response.getJSONArray("data");
-            
-            for (int i = 0; i < customerArray.length(); i++) {
-                JSONObject cust = customerArray.getJSONObject(i);
-                customers.add(new Customer(
-                    cust.getInt("customer_id"),
-                    cust.getString("name"),
-                    cust.getString("phone"),
-                    cust.getString("email"),
-                    cust.getString("address")
-                ));
-            }
-        } catch (Exception e) {
-            System.err.println("Error getting customers: " + e.getMessage());
-        }
-        return customers;
-    }
-
-    // Search Customer by Name
-    public List<Customer> searchCustomerByName(String name) {
-        List<Customer> customers = new ArrayList<>();
-        try {
-            JSONObject response = ApiClient.get("/customers");
-            JSONArray customerArray = response.getJSONArray("data");
-            
-            String searchName = name.toLowerCase();
-            for (int i = 0; i < customerArray.length(); i++) {
-                JSONObject cust = customerArray.getJSONObject(i);
-                if (cust.getString("name").toLowerCase().contains(searchName)) {
-                    customers.add(new Customer(
-                        cust.getInt("customer_id"),
-                        cust.getString("name"),
-                        cust.getString("phone"),
-                        cust.getString("email"),
-                        cust.getString("address")
+            if (response != null && response.has("data")) {
+                JSONArray array = response.getJSONArray("data");
+                for (int i = 0; i < array.length(); i++) {
+                    JSONObject c = array.getJSONObject(i);
+                    list.add(new Customer(
+                        c.optInt("customer_id", -1), c.optString("name"),
+                        c.optString("phone"), c.optString("email"), c.optString("address")
                     ));
                 }
             }
         } catch (Exception e) {
-            System.err.println("Error searching customers: " + e.getMessage());
+            System.err.println("Error loading customers: " + e.getMessage());
         }
-        return customers;
+        return list;
+    }
+
+    // Search Customer by Name
+    public List<Customer> searchCustomerByName(String name) {
+        List<Customer> result = new ArrayList<>();
+        String n = name.toLowerCase();
+        for (Customer c : getAllCustomers()) {
+            if (c.getName().toLowerCase().contains(n)) result.add(c);
+        }
+        return result;
     }
 }

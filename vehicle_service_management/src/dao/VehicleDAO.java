@@ -12,7 +12,6 @@ import java.util.List;
  */
 public class VehicleDAO {
 
-    // Add Vehicle via API
     public boolean addVehicle(Vehicle vehicle) {
         try {
             JSONObject data = new JSONObject();
@@ -20,53 +19,60 @@ public class VehicleDAO {
             data.put("brand", vehicle.getBrand());
             data.put("model", vehicle.getModel());
             data.put("registration_number", vehicle.getRegistrationNumber());
+            data.put("category", "STANDARD"); 
             
             JSONObject response = ApiClient.post("/vehicles", data);
-            System.out.println("✓ Vehicle added: " + vehicle.getBrand() + " " + vehicle.getModel());
-            return response.optBoolean("success", true);
+            return response.optBoolean("success", false);
         } catch (Exception e) {
-            System.err.println("✗ Error adding vehicle: " + e.getMessage());
-            e.printStackTrace();
+            System.err.println("Error adding vehicle: " + e.getMessage());
             return false;
         }
     }
 
-    // Update Vehicle (placeholder)
     public boolean updateVehicle(Vehicle vehicle) {
         try {
-            return true; // Placeholder
+            JSONObject data = new JSONObject();
+            data.put("vehicle_id", vehicle.getVehicleId());
+            data.put("customer_id", vehicle.getCustomerId());
+            data.put("brand", vehicle.getBrand());
+            data.put("model", vehicle.getModel());
+            data.put("registration_number", vehicle.getRegistrationNumber());
+            data.put("category", "STANDARD");
+            
+            JSONObject response = ApiClient.put("/vehicles", data);
+            return response.optBoolean("success", false);
         } catch (Exception e) {
             System.err.println("Error updating vehicle: " + e.getMessage());
             return false;
         }
     }
 
-    // Delete Vehicle (placeholder)
     public boolean deleteVehicle(int vehicleId) {
         try {
-            return true; // Placeholder
+            JSONObject response = ApiClient.delete("/vehicles?id=" + vehicleId);
+            return response.optBoolean("success", false);
         } catch (Exception e) {
             System.err.println("Error deleting vehicle: " + e.getMessage());
             return false;
         }
     }
 
-    // Get Vehicle by ID
     public Vehicle getVehicleById(int vehicleId) {
         try {
             JSONObject response = ApiClient.get("/vehicles");
-            JSONArray vehicles = response.getJSONArray("data");
-            
-            for (int i = 0; i < vehicles.length(); i++) {
-                JSONObject vehicle = vehicles.getJSONObject(i);
-                if (vehicle.getInt("vehicle_id") == vehicleId) {
-                    return new Vehicle(
-                        vehicle.getInt("vehicle_id"),
-                        vehicle.getInt("customer_id"),
-                        vehicle.getString("brand"),
-                        vehicle.getString("model"),
-                        vehicle.getString("registration_number")
-                    );
+            if (response != null && response.has("data")) {
+                JSONArray vehicles = response.getJSONArray("data");
+                for (int i = 0; i < vehicles.length(); i++) {
+                    JSONObject v = vehicles.getJSONObject(i);
+                    if (v.optInt("vehicle_id", -1) == vehicleId) {
+                        return new Vehicle(
+                            v.optInt("vehicle_id", -1),
+                            v.optInt("customer_id", -1),
+                            v.optString("brand"),
+                            v.optString("model"),
+                            v.optString("registration_number")
+                        );
+                    }
                 }
             }
         } catch (Exception e) {
@@ -75,75 +81,86 @@ public class VehicleDAO {
         return null;
     }
 
-    // Get All Vehicles via API
     public List<Vehicle> getAllVehicles() {
-        List<Vehicle> vehicles = new ArrayList<>();
+        List<Vehicle> list = new ArrayList<>();
         try {
             JSONObject response = ApiClient.get("/vehicles");
-            JSONArray vehicleArray = response.getJSONArray("data");
-            
-            for (int i = 0; i < vehicleArray.length(); i++) {
-                JSONObject veh = vehicleArray.getJSONObject(i);
-                vehicles.add(new Vehicle(
-                    veh.getInt("vehicle_id"),
-                    veh.getInt("customer_id"),
-                    veh.getString("brand"),
-                    veh.getString("model"),
-                    veh.getString("registration_number")
-                ));
-            }
-        } catch (Exception e) {
-            System.err.println("Error getting vehicles: " + e.getMessage());
-        }
-        return vehicles;
-    }
-
-    // Get Vehicles by Customer ID
-    public List<Vehicle> getVehiclesByCustomerId(int customerId) {
-        List<Vehicle> vehicles = new ArrayList<>();
-        try {
-            JSONObject response = ApiClient.get("/vehicles");
-            JSONArray vehicleArray = response.getJSONArray("data");
-            
-            for (int i = 0; i < vehicleArray.length(); i++) {
-                JSONObject veh = vehicleArray.getJSONObject(i);
-                if (veh.getInt("customer_id") == customerId) {
-                    vehicles.add(new Vehicle(
-                        veh.getInt("vehicle_id"),
-                        veh.getInt("customer_id"),
-                        veh.getString("brand"),
-                        veh.getString("model"),
-                        veh.getString("registration_number")
+            if (response != null && response.has("data")) {
+                JSONArray array = response.getJSONArray("data");
+                for (int i = 0; i < array.length(); i++) {
+                    JSONObject v = array.getJSONObject(i);
+                    list.add(new Vehicle(
+                        v.optInt("vehicle_id", -1), v.optInt("customer_id", -1),
+                        v.optString("brand"), v.optString("model"),
+                        v.optString("registration_number")
                     ));
                 }
             }
         } catch (Exception e) {
-            System.err.println("Error getting customer vehicles: " + e.getMessage());
+            System.err.println("Error loading vehicles: " + e.getMessage());
+        }
+        return list;
+    }
+
+    public List<Vehicle> getVehiclesByCustomerId(int customerId) {
+        List<Vehicle> vehicles = new ArrayList<>();
+        try {
+            JSONObject response = ApiClient.get("/vehicles");
+            if (response != null && response.has("data")) {
+                JSONArray array = response.getJSONArray("data");
+                for (int i = 0; i < array.length(); i++) {
+                    JSONObject v = array.getJSONObject(i);
+                    if (v.optInt("customer_id", -1) == customerId) {
+                        vehicles.add(new Vehicle(
+                            v.optInt("vehicle_id", -1), v.optInt("customer_id", -1),
+                            v.optString("brand"), v.optString("model"),
+                            v.optString("registration_number")
+                        ));
+                    }
+                }
+            }
+        } catch (Exception e) {
+            System.err.println("Error loading customer vehicles: " + e.getMessage());
         }
         return vehicles;
     }
 
-    // Search Vehicle by Registration Number
-    public Vehicle searchByRegistrationNumber(String registrationNumber) {
+    public Vehicle searchByRegistrationNumber(String reg) {
+        for (Vehicle v : getAllVehicles()) {
+            if (v.getRegistrationNumber().equalsIgnoreCase(reg)) return v;
+        }
+        return null;
+    }
+
+    public List<String> getAllBrands() {
+        List<String> list = new ArrayList<>();
         try {
-            JSONObject response = ApiClient.get("/vehicles");
-            JSONArray vehicleArray = response.getJSONArray("data");
-            
-            for (int i = 0; i < vehicleArray.length(); i++) {
-                JSONObject veh = vehicleArray.getJSONObject(i);
-                if (veh.getString("registration_number").equalsIgnoreCase(registrationNumber)) {
-                    return new Vehicle(
-                        veh.getInt("vehicle_id"),
-                        veh.getInt("customer_id"),
-                        veh.getString("brand"),
-                        veh.getString("model"),
-                        veh.getString("registration_number")
-                    );
+            JSONObject response = ApiClient.get("/vehicles/brands");
+            if (response.optBoolean("success")) {
+                JSONArray array = response.getJSONArray("data");
+                for (int i = 0; i < array.length(); i++) {
+                    list.add(array.getString(i));
                 }
             }
         } catch (Exception e) {
-            System.err.println("Error searching vehicle: " + e.getMessage());
+            e.printStackTrace();
         }
-        return null;
+        return list;
+    }
+
+    public List<String> getModelsByBrand(String brand) {
+        List<String> list = new ArrayList<>();
+        try {
+            JSONObject response = ApiClient.get("/vehicles/models?brand=" + java.net.URLEncoder.encode(brand, "UTF-8"));
+            if (response.optBoolean("success")) {
+                JSONArray array = response.getJSONArray("data");
+                for (int i = 0; i < array.length(); i++) {
+                    list.add(array.getString(i));
+                }
+            }
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return list;
     }
 }

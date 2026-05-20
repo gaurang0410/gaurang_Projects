@@ -6,6 +6,8 @@ public class Vehicle {
     private String brand;
     private String model;
     private String registrationNumber;
+    private String customerName;
+    private String vehicleCategory;
 
     public Vehicle() {
     }
@@ -66,14 +68,27 @@ public class Vehicle {
         this.registrationNumber = registrationNumber;
     }
 
+    public String getCustomerName() {
+        return customerName;
+    }
+
+    public void setCustomerName(String customerName) {
+        this.customerName = customerName;
+    }
+
+    public String getVehicleCategory() {
+        return vehicleCategory;
+    }
+
+    public void setVehicleCategory(String vehicleCategory) {
+        this.vehicleCategory = vehicleCategory;
+    }
+
+    /**
+     * Returns user-friendly label for display in JComboBox dropdowns.
+     */
     @Override
     public String toString() {
-        return "Vehicle{" +
-                "vehicleId=" + vehicleId +
-                ", customerId=" + customerId +
-                ", brand='" + brand + '\'' +
-                ", model='" + model + '\'' +
-                ", registrationNumber='" + registrationNumber + '\'' +
-                '}';
+        return (brand != null ? brand : "") + " " + (model != null ? model : "") + " [" + (registrationNumber != null ? registrationNumber : "") + "]";
     }
 }

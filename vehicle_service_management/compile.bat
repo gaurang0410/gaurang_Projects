@@ -1,27 +1,19 @@
 @echo off
-REM Compilation Script for Vehicle Service Management App with REST API
-REM This script compiles all Java files
+echo.
+echo VehicleFlow - Compiling...
+echo ============================
 
-echo Compiling Vehicle Service Management App...
+if not exist bin mkdir bin
 
-cd src
+javac -encoding UTF-8 -d bin -cp "lib\*" src\Main.java src\api\*.java src\dao\*.java src\gui\*.java src\model\*.java src\service\*.java
 
-REM Compile all Java files with API support
-javac -cp .;../lib/mysql-connector-j-8.0.33.jar;../lib/json-20231013.jar gui/*.java model/*.java dao/*.java service/*.java api/*.java Main.java
-
-if %errorlevel% equ 0 (
+if %errorlevel% neq 0 (
     echo.
-    echo Compilation successful!
-    echo.
-    echo To run the application, execute: run.bat
-) else (
-    echo.
-    echo Compilation failed! Check the errors above.
-    echo.
-    echo Make sure you have:
-    echo   - lib/mysql-connector-j-8.0.33.jar
-    echo   - lib/json-20231013.jar
+    echo Compilation failed.
     pause
+    exit /b %errorlevel%
 )
 
+echo.
+echo Compilation successful!
 pause

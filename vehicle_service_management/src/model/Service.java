@@ -7,6 +7,9 @@ public class Service {
     private String serviceDate;
     private String status;  // Pending, In Progress, Completed
     private double cost;
+    private Integer mechanicId;
+    private String mechanicName;
+    private String estimatedTime;
 
     public Service() {
     }
@@ -20,8 +23,27 @@ public class Service {
         this.cost = cost;
     }
 
+    public Service(int serviceId, int vehicleId, Integer mechanicId, String serviceType, String serviceDate, String status, double cost) {
+        this.serviceId = serviceId;
+        this.vehicleId = vehicleId;
+        this.mechanicId = mechanicId;
+        this.serviceType = serviceType;
+        this.serviceDate = serviceDate;
+        this.status = status;
+        this.cost = cost;
+    }
+
     public Service(int vehicleId, String serviceType, String serviceDate, String status, double cost) {
         this.vehicleId = vehicleId;
+        this.serviceType = serviceType;
+        this.serviceDate = serviceDate;
+        this.status = status;
+        this.cost = cost;
+    }
+
+    public Service(int vehicleId, Integer mechanicId, String serviceType, String serviceDate, String status, double cost) {
+        this.vehicleId = vehicleId;
+        this.mechanicId = mechanicId;
         this.serviceType = serviceType;
         this.serviceDate = serviceDate;
         this.status = status;
@@ -77,6 +99,30 @@ public class Service {
         this.cost = cost;
     }
 
+    public Integer getMechanicId() {
+        return mechanicId;
+    }
+
+    public void setMechanicId(Integer mechanicId) {
+        this.mechanicId = mechanicId;
+    }
+
+    public String getMechanicName() {
+        return mechanicName;
+    }
+
+    public void setMechanicName(String mechanicName) {
+        this.mechanicName = mechanicName;
+    }
+
+    public String getEstimatedTime() {
+        return estimatedTime;
+    }
+
+    public void setEstimatedTime(String estimatedTime) {
+        this.estimatedTime = estimatedTime;
+    }
+
     @Override
     public String toString() {
         return "Service{" +
@@ -86,6 +132,9 @@ public class Service {
                 ", serviceDate='" + serviceDate + '\'' +
                 ", status='" + status + '\'' +
                 ", cost=" + cost +
+                ", mechanicId=" + mechanicId +
+                ", mechanicName='" + mechanicName + '\'' +
+                ", estimatedTime='" + estimatedTime + '\'' +
                 '}';
     }
 }

@@ -5,21 +5,21 @@ import service.CustomerService;
 import model.Vehicle;
 import model.Customer;
 import javax.swing.*;
+import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
+import java.awt.event.ItemEvent;
 import java.util.List;
 
 public class VehicleForm extends JFrame {
+    private static final long serialVersionUID = 1L;
+
     private JComboBox<String> customerCombo;
-    private JTextField brandField;
-    private JTextField modelField;
+    private JComboBox<String> brandCombo;
+    private JComboBox<String> modelCombo;
     private JTextField registrationField;
     private JButton saveBtn;
     private JButton updateBtn;
     private JButton deleteBtn;
-    private JButton searchBtn;
-    private JButton viewAllBtn;
     private JButton clearBtn;
     private JTable vehicleTable;
     private JScrollPane scrollPane;
@@ -27,241 +27,280 @@ public class VehicleForm extends JFrame {
     private CustomerService customerService;
     private int selectedVehicleId = -1;
     private java.util.Map<String, Integer> customerMap;
+    
+    private int fixedCustomerId = -1; // -1 means admin view (can choose customer)
+    private boolean isLoading = false;
 
     public VehicleForm() {
-        setTitle("Vehicle Management");
-        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
-        setSize(900, 600);
-        setLocationRelativeTo(null);
-        setVisible(true);
+        this(-1); // Admin mode
+    }
 
+    public VehicleForm(int customerId) {
+        this.fixedCustomerId = customerId;
+        setTitle(fixedCustomerId == -1 ? "Vehicle Management (Admin)" : "My Vehicles");
+        setDefaultCloseOperation(JFrame.DISPOSE_ON_CLOSE);
+        setSize(1000, 650);
+        setLocationRelativeTo(null);
+        
         vehicleService = new VehicleService();
         customerService = new CustomerService();
         customerMap = new java.util.HashMap<>();
+        
+        isLoading = true;
         initComponents();
         loadAllVehicles();
+        isLoading = false;
+        
+        if (brandCombo.getItemCount() > 0) {
+            loadModelsToCombo((String) brandCombo.getSelectedItem());
+        }
+        
+        setVisible(true);
     }
 
     private void initComponents() {
-        JPanel mainPanel = new JPanel();
-        mainPanel.setLayout(null);
-        mainPanel.setBackground(new Color(240, 245, 250));
+        JPanel mainPanel = UITheme.gradientPanel(UITheme.BG_DARK, UITheme.BG_CARD);
+        mainPanel.setLayout(new BorderLayout(20, 20));
+        mainPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        setContentPane(mainPanel);
 
         // Title
-        JLabel titleLabel = new JLabel("Vehicle Management");
-        titleLabel.setFont(new Font("Arial", Font.BOLD, 18));
-        titleLabel.setBounds(350, 10, 250, 30);
-        mainPanel.add(titleLabel);
+        JLabel titleLabel = UITheme.styledLabel(fixedCustomerId == -1 ? " Vehicle Management" : " Register My Vehicle");
+        titleLabel.setFont(UITheme.FONT_TITLE);
+        titleLabel.setForeground(UITheme.ACCENT_CYAN);
+        mainPanel.add(titleLabel, BorderLayout.NORTH);
+
+        // Center Content
+        JPanel centerPanel = new JPanel(new BorderLayout(20, 0));
+        centerPanel.setOpaque(false);
 
         // Form Panel
-        JPanel formPanel = new JPanel();
-        formPanel.setLayout(null);
-        formPanel.setBounds(10, 50, 400, 300);
-        formPanel.setBackground(Color.WHITE);
-        formPanel.setBorder(BorderFactory.createLineBorder(Color.GRAY));
+        JPanel formPanel = new JPanel(new GridBagLayout()) {
+            @Override
+            protected void paintComponent(Graphics g) {
+                Graphics2D g2 = (Graphics2D) g;
+                g2.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
+                g2.setColor(UITheme.BG_CARD_HOVER);
+                g2.fillRoundRect(0, 0, getWidth(), getHeight(), 15, 15);
+            }
+        };
+        formPanel.setOpaque(false);
+        formPanel.setBorder(new EmptyBorder(20, 20, 20, 20));
+        formPanel.setPreferredSize(new Dimension(380, 0));
 
-        // Customer
-        JLabel customerLabel = new JLabel("Customer:");
-        customerLabel.setBounds(20, 20, 80, 25);
-        formPanel.add(customerLabel);
-        customerCombo = new JComboBox<>();
-        customerCombo.setBounds(120, 20, 250, 25);
-        loadCustomersToCombo();
-        formPanel.add(customerCombo);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.insets = new Insets(10, 10, 10, 10);
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.anchor = GridBagConstraints.WEST;
+        gbc.weightx = 1.0;
+
+        int gridy = 0;
+
+        // Customer (Hide if Customer mode)
+        if (fixedCustomerId == -1) {
+            gbc.gridx = 0; gbc.gridy = gridy;
+            formPanel.add(UITheme.styledLabel("Customer:"), gbc);
+            gbc.gridx = 1;
+            customerCombo = UITheme.styledComboBox();
+            loadCustomersToCombo();
+            formPanel.add(customerCombo, gbc);
+            gridy++;
+        }
 
         // Brand
-        JLabel brandLabel = new JLabel("Brand:");
-        brandLabel.setBounds(20, 60, 80, 25);
-        formPanel.add(brandLabel);
-        brandField = new JTextField();
-        brandField.setBounds(120, 60, 250, 25);
-        formPanel.add(brandField);
+        gbc.gridx = 0; gbc.gridy = gridy;
+        formPanel.add(UITheme.styledLabel("Brand:"), gbc);
+        gbc.gridx = 1;
+        brandCombo = UITheme.styledComboBox();
+        loadBrandsToCombo();
+        brandCombo.addActionListener(e -> {
+            if (isLoading) return;
+            String sel = (String) brandCombo.getSelectedItem();
+            loadModelsToCombo(sel);
+        });
+        formPanel.add(brandCombo, gbc);
+        gridy++;
 
         // Model
-        JLabel modelLabel = new JLabel("Model:");
-        modelLabel.setBounds(20, 100, 80, 25);
-        formPanel.add(modelLabel);
-        modelField = new JTextField();
-        modelField.setBounds(120, 100, 250, 25);
-        formPanel.add(modelField);
+        gbc.gridx = 0; gbc.gridy = gridy;
+        formPanel.add(UITheme.styledLabel("Model:"), gbc);
+        gbc.gridx = 1;
+        modelCombo = UITheme.styledComboBox();
+        formPanel.add(modelCombo, gbc);
+        gridy++;
 
         // Registration
-        JLabel registrationLabel = new JLabel("Registration:");
-        registrationLabel.setBounds(20, 140, 80, 25);
-        formPanel.add(registrationLabel);
-        registrationField = new JTextField();
-        registrationField.setBounds(120, 140, 250, 25);
-        formPanel.add(registrationField);
+        gbc.gridx = 0; gbc.gridy = gridy;
+        formPanel.add(UITheme.styledLabel("Registration:"), gbc);
+        gbc.gridx = 1;
+        registrationField = UITheme.styledTextField("Registration No.");
+        formPanel.add(registrationField, gbc);
+        gridy++;
 
         // Buttons
-        saveBtn = new JButton("Save");
-        saveBtn.setBounds(20, 180, 80, 30);
-        saveBtn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                handleSave();
-            }
-        });
-        formPanel.add(saveBtn);
+        JPanel buttonPanel = new JPanel(new GridLayout(2, 2, 10, 10));
+        buttonPanel.setOpaque(false);
+        
+        saveBtn = UITheme.accentButton("Save", UITheme.ACCENT_GREEN);
+        saveBtn.addActionListener(e -> handleSave());
+        buttonPanel.add(saveBtn);
 
-        updateBtn = new JButton("Update");
-        updateBtn.setBounds(110, 180, 80, 30);
-        updateBtn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                handleUpdate();
-            }
-        });
-        formPanel.add(updateBtn);
+        updateBtn = UITheme.accentButton("Update", UITheme.ACCENT_BLUE);
+        updateBtn.addActionListener(e -> handleUpdate());
+        buttonPanel.add(updateBtn);
 
-        deleteBtn = new JButton("Delete");
-        deleteBtn.setBounds(200, 180, 80, 30);
-        deleteBtn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                handleDelete();
-            }
-        });
-        formPanel.add(deleteBtn);
+        deleteBtn = UITheme.accentButton("Delete", UITheme.ACCENT_RED);
+        deleteBtn.addActionListener(e -> handleDelete());
+        buttonPanel.add(deleteBtn);
 
-        clearBtn = new JButton("Clear");
-        clearBtn.setBounds(290, 180, 80, 30);
-        clearBtn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                clearForm();
-            }
-        });
-        formPanel.add(clearBtn);
+        clearBtn = UITheme.accentButton("Clear", UITheme.BORDER_DEFAULT);
+        clearBtn.addActionListener(e -> clearForm());
+        buttonPanel.add(clearBtn);
+        setRowActionState(false);
 
-        // Search
-        searchBtn = new JButton("Search by Reg");
-        searchBtn.setBounds(20, 240, 120, 30);
-        searchBtn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                handleSearch();
-            }
-        });
-        formPanel.add(searchBtn);
+        gbc.gridx = 0; gbc.gridy = gridy; gbc.gridwidth = 2; gbc.fill = GridBagConstraints.NONE; gbc.anchor = GridBagConstraints.CENTER;
+        formPanel.add(buttonPanel, gbc);
 
-        viewAllBtn = new JButton("View All");
-        viewAllBtn.setBounds(160, 240, 100, 30);
-        viewAllBtn.addActionListener(new ActionListener() {
-            @Override
-            public void actionPerformed(ActionEvent e) {
-                loadAllVehicles();
-            }
-        });
-        formPanel.add(viewAllBtn);
-
-        mainPanel.add(formPanel);
+        centerPanel.add(formPanel, BorderLayout.WEST);
 
         // Table
         vehicleTable = new JTable();
-        scrollPane = new JScrollPane(vehicleTable);
-        scrollPane.setBounds(420, 50, 460, 500);
-        mainPanel.add(scrollPane);
+        UITheme.styleTable(vehicleTable);
+        scrollPane = UITheme.styledScrollPane(vehicleTable);
+        centerPanel.add(scrollPane, BorderLayout.CENTER);
 
-        add(mainPanel);
+        mainPanel.add(centerPanel, BorderLayout.CENTER);
     }
 
     private void loadCustomersToCombo() {
+        customerMap.clear();
+        customerCombo.removeAllItems();
         List<Customer> customers = customerService.getAllCustomers();
         for (Customer c : customers) {
-            customerCombo.addItem(c.getName());
-            customerMap.put(c.getName(), c.getCustomerId());
+            String display = c.getCustomerId() + " - " + c.getName();
+            customerCombo.addItem(display);
+            customerMap.put(display, c.getCustomerId());
+        }
+    }
+
+    private void loadBrandsToCombo() {
+        brandCombo.removeAllItems();
+        List<String> brands = vehicleService.getAllBrands();
+        for (String brand : brands) {
+            brandCombo.addItem(brand);
+        }
+    }
+
+    private void loadModelsToCombo(String brand) {
+        modelCombo.removeAllItems();
+        if (brand == null) return;
+        List<String> models = vehicleService.getModelsByBrand(brand);
+        for (String model : models) {
+            modelCombo.addItem(model);
         }
     }
 
     private void handleSave() {
-        if (customerCombo.getSelectedItem() == null) {
-            JOptionPane.showMessageDialog(this, "Please select a customer!", "Error", JOptionPane.ERROR_MESSAGE);
+        int customerId = fixedCustomerId;
+        if (fixedCustomerId == -1) {
+            if (customerCombo.getSelectedItem() == null) {
+                UITheme.showAlert(this, "Customer Required", "Please select a customer!", UITheme.AlertType.ERROR);
+                return;
+            }
+            Integer selected = customerMap.get((String) customerCombo.getSelectedItem());
+            customerId = selected == null ? -1 : selected;
+        }
+
+        if (customerId <= 0) {
+            UITheme.showAlert(this, "Invalid Customer", "Please choose a valid customer profile.", UITheme.AlertType.WARNING);
             return;
         }
 
-        String customerName = (String) customerCombo.getSelectedItem();
-        int customerId = customerMap.get(customerName);
-        String brand = brandField.getText();
-        String model = modelField.getText();
-        String registration = registrationField.getText();
+        String brand = (String) brandCombo.getSelectedItem();
+        String model = (String) modelCombo.getSelectedItem();
+        String registration = registrationField.getText().trim();
 
-        if (brand.isEmpty() || model.isEmpty() || registration.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "All fields are required!", "Error", JOptionPane.ERROR_MESSAGE);
+        if (brand == null || model == null || registration.isEmpty()) {
+            UITheme.showAlert(this, "Validation Error", "All vehicle fields are required!", UITheme.AlertType.WARNING);
             return;
         }
 
         if (vehicleService.addVehicle(customerId, brand, model, registration)) {
-            JOptionPane.showMessageDialog(this, "Vehicle added successfully!");
+            UITheme.showAlert(this, "Vehicle Registered", "Vehicle " + registration + " has been added successfully.", UITheme.AlertType.SUCCESS);
             clearForm();
             loadAllVehicles();
         } else {
-            JOptionPane.showMessageDialog(this, "Error adding vehicle!", "Error", JOptionPane.ERROR_MESSAGE);
+            UITheme.showAlert(this, "Registration Failed", "Could not register vehicle. Check if registration number already exists.", UITheme.AlertType.ERROR);
         }
     }
 
     private void handleUpdate() {
         if (selectedVehicleId == -1) {
-            JOptionPane.showMessageDialog(this, "Please select a vehicle to update!", "Error", JOptionPane.ERROR_MESSAGE);
+            UITheme.showAlert(this, "No Selection", "Please select a vehicle from the table to update.", UITheme.AlertType.ERROR);
             return;
         }
 
-        String customerName = (String) customerCombo.getSelectedItem();
-        int customerId = customerMap.get(customerName);
-        String brand = brandField.getText();
-        String model = modelField.getText();
-        String registration = registrationField.getText();
+        int customerId = fixedCustomerId;
+        if (fixedCustomerId == -1) {
+            if (customerCombo.getSelectedItem() == null) {
+                UITheme.showAlert(this, "Selection Error", "Please select a customer first.", UITheme.AlertType.ERROR);
+                return;
+            }
+            Integer selected = customerMap.get((String) customerCombo.getSelectedItem());
+            customerId = selected == null ? -1 : selected;
+        }
 
-        if (brand.isEmpty() || model.isEmpty() || registration.isEmpty()) {
-            JOptionPane.showMessageDialog(this, "All fields are required!", "Error", JOptionPane.ERROR_MESSAGE);
+        if (customerId <= 0) {
+            UITheme.showAlert(this, "Invalid Selection", "Please choose a valid customer profile.", UITheme.AlertType.WARNING);
+            return;
+        }
+
+        String brand = (String) brandCombo.getSelectedItem();
+        String model = (String) modelCombo.getSelectedItem();
+        String registration = registrationField.getText().trim();
+
+        if (brand == null || model == null || registration.isEmpty()) {
+            UITheme.showAlert(this, "Missing Data", "All fields are required for update.", UITheme.AlertType.ERROR);
             return;
         }
 
         if (vehicleService.updateVehicle(selectedVehicleId, customerId, brand, model, registration)) {
-            JOptionPane.showMessageDialog(this, "Vehicle updated successfully!");
+            UITheme.showAlert(this, "Update Successful", "Vehicle details have been updated.", UITheme.AlertType.SUCCESS);
             clearForm();
             loadAllVehicles();
             selectedVehicleId = -1;
+            setRowActionState(false);
         } else {
-            JOptionPane.showMessageDialog(this, "Error updating vehicle!", "Error", JOptionPane.ERROR_MESSAGE);
+            UITheme.showAlert(this, "Update Failed", "System encountered an error during update.", UITheme.AlertType.ERROR);
         }
     }
 
     private void handleDelete() {
         if (selectedVehicleId == -1) {
-            JOptionPane.showMessageDialog(this, "Please select a vehicle to delete!", "Error", JOptionPane.ERROR_MESSAGE);
+            UITheme.showAlert(this, "No Selection", "Please select a vehicle to delete.", UITheme.AlertType.ERROR);
             return;
         }
 
-        int confirm = JOptionPane.showConfirmDialog(this, "Are you sure you want to delete this vehicle?", "Confirm Delete", JOptionPane.YES_NO_OPTION);
-        if (confirm == JOptionPane.YES_OPTION) {
+        if (UITheme.showConfirm(this, "Confirm Delete", "Are you sure you want to delete this vehicle? This action cannot be undone.")) {
             if (vehicleService.deleteVehicle(selectedVehicleId)) {
-                JOptionPane.showMessageDialog(this, "Vehicle deleted successfully!");
+                UITheme.showAlert(this, "Deleted", "Vehicle record has been removed.", UITheme.AlertType.SUCCESS);
                 clearForm();
                 loadAllVehicles();
                 selectedVehicleId = -1;
+                setRowActionState(false);
             } else {
-                JOptionPane.showMessageDialog(this, "Error deleting vehicle!", "Error", JOptionPane.ERROR_MESSAGE);
-            }
-        }
-    }
-
-    private void handleSearch() {
-        String registration = JOptionPane.showInputDialog(this, "Enter registration number:");
-        if (registration != null && !registration.isEmpty()) {
-            Vehicle vehicle = vehicleService.searchByRegistrationNumber(registration);
-            if (vehicle == null) {
-                JOptionPane.showMessageDialog(this, "Vehicle not found!", "Info", JOptionPane.INFORMATION_MESSAGE);
-            } else {
-                java.util.List<Vehicle> vehicles = new java.util.ArrayList<>();
-                vehicles.add(vehicle);
-                loadVehiclesToTable(vehicles);
+                UITheme.showAlert(this, "Delete Failed", "System could not remove the vehicle record.", UITheme.AlertType.ERROR);
             }
         }
     }
 
     private void loadAllVehicles() {
-        List<Vehicle> vehicles = vehicleService.getAllVehicles();
+        List<Vehicle> vehicles;
+        if (fixedCustomerId == -1) {
+            vehicles = vehicleService.getAllVehicles();
+        } else {
+            vehicles = vehicleService.getVehiclesByCustomerId(fixedCustomerId);
+        }
         loadVehiclesToTable(vehicles);
     }
 
@@ -278,34 +317,88 @@ public class VehicleForm extends JFrame {
             data[i][4] = v.getRegistrationNumber();
         }
 
-        vehicleTable = new JTable(data, columns) {
+        vehicleTable.setModel(new javax.swing.table.DefaultTableModel(data, columns) {
             @Override
             public boolean isCellEditable(int row, int column) {
                 return false;
             }
-        };
+        });
+        UITheme.styleTable(vehicleTable);
+        setRowActionState(false);
 
+        // Ensure we don't add multiple mouse listeners
+        for (java.awt.event.MouseListener ml : vehicleTable.getMouseListeners()) {
+            vehicleTable.removeMouseListener(ml);
+        }
+        
         vehicleTable.addMouseListener(new java.awt.event.MouseAdapter() {
             public void mouseClicked(java.awt.event.MouseEvent evt) {
                 int row = vehicleTable.rowAtPoint(evt.getPoint());
                 if (row >= 0) {
                     selectedVehicleId = (int) vehicleTable.getValueAt(row, 0);
-                    customerCombo.setSelectedIndex((int) vehicleTable.getValueAt(row, 1) - 1);
-                    brandField.setText((String) vehicleTable.getValueAt(row, 2));
-                    modelField.setText((String) vehicleTable.getValueAt(row, 3));
+                    setRowActionState(true);
+                    if (fixedCustomerId == -1) {
+                        int cid = (int) vehicleTable.getValueAt(row, 1);
+                        for(int i=0; i<customerCombo.getItemCount(); i++) {
+                            Integer mappedId = customerMap.get(customerCombo.getItemAt(i));
+                            if (mappedId != null && mappedId == cid) {
+                                customerCombo.setSelectedIndex(i);
+                                break;
+                            }
+                        }
+                    }
+                    brandCombo.setSelectedItem((String) vehicleTable.getValueAt(row, 2));
+                    modelCombo.setSelectedItem((String) vehicleTable.getValueAt(row, 3));
                     registrationField.setText((String) vehicleTable.getValueAt(row, 4));
                 }
             }
+            @Override public void mousePressed(java.awt.event.MouseEvent e) { maybeSelectRow(e); }
+            @Override public void mouseReleased(java.awt.event.MouseEvent e) { maybeSelectRow(e); }
+            private void maybeSelectRow(java.awt.event.MouseEvent e) {
+                int row = vehicleTable.rowAtPoint(e.getPoint());
+                if (row >= 0) vehicleTable.setRowSelectionInterval(row, row);
+            }
         });
 
-        scrollPane.setViewportView(vehicleTable);
+        // Right-click popup menu
+        JPopupMenu vpopup = new JPopupMenu();
+        JMenuItem viewItem = new JMenuItem("View Details");
+        viewItem.addActionListener(e -> {
+            int row = vehicleTable.getSelectedRow();
+            if (row < 0) return;
+            int modelRow = vehicleTable.convertRowIndexToModel(row);
+            int vid = (int) vehicleTable.getValueAt(modelRow, 0);
+            Vehicle v = vehicleService.getVehicleById(vid);
+            if (v != null) {
+                JOptionPane.showMessageDialog(this, "Vehicle:\n" + v.toString(), "Vehicle Details", JOptionPane.INFORMATION_MESSAGE);
+            }
+        });
+        JMenuItem editItem = new JMenuItem("Edit");
+        editItem.addActionListener(e -> {
+            int row = vehicleTable.getSelectedRow(); if (row < 0) return;
+            int modelRow = vehicleTable.convertRowIndexToModel(row);
+            selectedVehicleId = (int) vehicleTable.getValueAt(modelRow, 0);
+            setRowActionState(true);
+        });
+        JMenuItem delItem = new JMenuItem("Delete");
+        delItem.addActionListener(e -> handleDelete());
+        vpopup.add(viewItem); vpopup.add(editItem); vpopup.addSeparator(); vpopup.add(delItem);
+        UITheme.styleMenu(vpopup);
+        vehicleTable.setComponentPopupMenu(vpopup);
     }
 
     private void clearForm() {
-        brandField.setText("");
-        modelField.setText("");
+        if (customerCombo != null && customerCombo.getItemCount() > 0) {
+            customerCombo.setSelectedIndex(0);
+        }
+        if (brandCombo.getItemCount() > 0) brandCombo.setSelectedIndex(0);
         registrationField.setText("");
-        customerCombo.setSelectedIndex(0);
         selectedVehicleId = -1;
+        setRowActionState(false);
+    }
+
+    private void setRowActionState(boolean selected) {
+        updateBtn.setEnabled(selected);
+        deleteBtn.setEnabled(selected);
     }
 }

@@ -25,6 +25,11 @@ public class CustomerService {
         return customerDAO.addCustomer(customer);
     }
 
+    public boolean addCustomer(Customer c) {
+        if (c.getName() == null || c.getName().trim().isEmpty()) return false;
+        return customerDAO.addCustomer(c);
+    }
+
     public boolean updateCustomer(int customerId, String name, String phone, String email, String address) {
         if (name == null || name.trim().isEmpty()) {
             System.out.println("Name cannot be empty!");
@@ -33,6 +38,11 @@ public class CustomerService {
 
         Customer customer = new Customer(customerId, name, phone, email, address);
         return customerDAO.updateCustomer(customer);
+    }
+
+    public boolean updateCustomer(Customer c) {
+        if (c.getName() == null || c.getName().trim().isEmpty()) return false;
+        return customerDAO.updateCustomer(c);
     }
 
     public boolean deleteCustomer(int customerId) {

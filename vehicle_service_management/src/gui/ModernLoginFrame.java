@@ -3,376 +3,292 @@ package gui;
 import javax.swing.*;
 import javax.swing.border.EmptyBorder;
 import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.awt.event.FocusEvent;
-import java.awt.event.FocusListener;
-import java.awt.geom.RoundRectangle2D;
+import java.io.*;
 import dao.UserDAO;
+import model.User;
 
 public class ModernLoginFrame extends JFrame {
-    private ModernTextField userField;
+    private static final long serialVersionUID = 1L;
+
+    private JTextField userField;
     private JPasswordField passField;
-    private JTextField passVisibleField;
     private JButton loginBtn;
     private JButton signUpBtn;
-    private JButton exitBtn;
-    private JButton eyeBtn;
     private JLabel messageLabel;
-    private boolean passwordVisible = false;
-    
-    // Modern color palette
-    private static final Color PRIMARY_COLOR = new Color(6, 182, 212);      // Cyan
-    private static final Color SECONDARY_COLOR = new Color(14, 165, 233);   // Sky Blue
-    private static final Color BACKGROUND_COLOR = new Color(15, 23, 42);    // Dark slate
-    private static final Color CARD_COLOR = new Color(30, 41, 59);          // Slate
-    private static final Color TEXT_PRIMARY = Color.WHITE;
-    private static final Color TEXT_SECONDARY = new Color(148, 163, 184);
+    private JCheckBox rememberMeCheck;
+    private static final File USER_PREF_FILE = new File("user.pref");
 
     public ModernLoginFrame() {
-        setTitle("Vehicle Service Management - Login");
+        setTitle("VehicleFlow – Secure Login");
         setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
-        setSize(900, 600);
-        setUndecorated(false);
+        setSize(1050, 680);
         setResizable(false);
-        
         initComponents();
         setLocationRelativeTo(null);
-        setAlwaysOnTop(true);
         setVisible(true);
-        setAlwaysOnTop(false);
-        requestFocus();
     }
 
     private void initComponents() {
-        JPanel mainPanel = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2d = (Graphics2D) g;
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                
-                // Gradient background
-                GradientPaint gradient = new GradientPaint(
-                    0, 0, new Color(15, 23, 42),
-                    getWidth(), getHeight(), new Color(30, 41, 59)
-                );
-                g2d.setPaint(gradient);
-                g2d.fillRect(0, 0, getWidth(), getHeight());
-                
-                // Decorative circles
-                g2d.setColor(new Color(6, 182, 212, 30));
-                g2d.fillOval(-100, -100, 300, 300);
-                g2d.setColor(new Color(14, 165, 233, 20));
-                g2d.fillOval(getWidth() - 150, getHeight() - 150, 350, 350);
-            }
-        };
-        mainPanel.setLayout(null);
+        JPanel mainPanel = new JPanel(new BorderLayout());
+        mainPanel.setBackground(UITheme.BG_DARK);
         setContentPane(mainPanel);
 
-        // Left Panel - Branding
-        JPanel brandPanel = createBrandPanel();
-        brandPanel.setBounds(0, 0, 450, 600);
-        mainPanel.add(brandPanel);
+        // Left – Brand panel
+        JPanel brand = createBrandPanel();
+        brand.setPreferredSize(new Dimension(460, 680));
+        mainPanel.add(brand, BorderLayout.WEST);
 
-        // Right Panel - Login Form
-        JPanel formPanel = createFormPanel();
-        formPanel.setBounds(450, 0, 450, 600);
-        mainPanel.add(formPanel);
+        // Right – Form panel
+        JPanel form = createFormPanel();
+        mainPanel.add(form, BorderLayout.CENTER);
     }
-    
+
+    // ─── Brand Panel ──────────────────────────────────────────────────────────
     private JPanel createBrandPanel() {
-        JPanel panel = new JPanel() {
-            @Override
-            protected void paintComponent(Graphics g) {
-                super.paintComponent(g);
-                Graphics2D g2d = (Graphics2D) g;
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                
-                GradientPaint gradient = new GradientPaint(
-                    0, 0, new Color(6, 182, 212),
-                    0, getHeight(), new Color(14, 165, 233)
-                );
-                g2d.setPaint(gradient);
-                g2d.fillRect(0, 0, getWidth(), getHeight());
-            }
-        };
-        panel.setLayout(new BoxLayout(panel, BoxLayout.Y_AXIS));
-        panel.setBorder(new EmptyBorder(60, 30, 60, 30));
+        JPanel panel = UITheme.brandPanel(
+                new Color(0, 90, 120),
+                new Color(5, 20, 60)
+        );
+        panel.setLayout(new BorderLayout());
 
-        // Logo/Icon
-        JLabel logoLabel = new JLabel("[VEHICLE]");
-        logoLabel.setFont(new Font("Arial", Font.BOLD, 50));
-        logoLabel.setAlignmentX(Component.CENTER_ALIGNMENT);
-        panel.add(Box.createVerticalStrut(40));
-        panel.add(logoLabel);
+        JPanel inner = new JPanel();
+        inner.setLayout(new BoxLayout(inner, BoxLayout.Y_AXIS));
+        inner.setOpaque(false);
+        inner.setBorder(new EmptyBorder(70, 55, 55, 55));
 
-        panel.add(Box.createVerticalStrut(30));
+        // Logo emoji
+        JLabel logo = new JLabel(UITheme.getIcon("vehicle", Color.WHITE, 80));
+        logo.setAlignmentX(Component.LEFT_ALIGNMENT);
+        inner.add(logo);
+        inner.add(Box.createVerticalStrut(28));
 
-        // Brand Title
-        JLabel brandTitle = new JLabel("VehicleFlow");
-        brandTitle.setFont(new Font("Segoe UI", Font.BOLD, 42));
-        brandTitle.setForeground(Color.WHITE);
-        brandTitle.setAlignmentX(Component.CENTER_ALIGNMENT);
-        panel.add(brandTitle);
-
-        panel.add(Box.createVerticalStrut(15));
+        // App name
+        JLabel appName = new JLabel("VehicleFlow");
+        appName.setFont(new Font("Segoe UI", Font.BOLD, 48));
+        appName.setForeground(Color.WHITE);
+        appName.setAlignmentX(Component.LEFT_ALIGNMENT);
+        inner.add(appName);
+        inner.add(Box.createVerticalStrut(10));
 
         // Tagline
-        JLabel tagline = new JLabel("Modern Service Management");
-        tagline.setFont(new Font("Segoe UI", Font.PLAIN, 16));
-        tagline.setForeground(new Color(220, 240, 255));
-        tagline.setAlignmentX(Component.CENTER_ALIGNMENT);
-        panel.add(tagline);
+        JLabel tagline = new JLabel("Premium Vehicle Service Management");
+        tagline.setFont(new Font("Segoe UI", Font.PLAIN, 17));
+        tagline.setForeground(new Color(180, 220, 240));
+        tagline.setAlignmentX(Component.LEFT_ALIGNMENT);
+        inner.add(tagline);
 
-        panel.add(Box.createVerticalStrut(50));
+        inner.add(Box.createVerticalGlue());
 
-        // Features
-        JLabel feature1 = createFeatureLabel("Easy to manage");
-        JLabel feature2 = createFeatureLabel("Real-time tracking");
-        JLabel feature3 = createFeatureLabel("Secure & reliable");
-        
-        panel.add(feature1);
-        panel.add(Box.createVerticalStrut(15));
-        panel.add(feature2);
-        panel.add(Box.createVerticalStrut(15));
-        panel.add(feature3);
+        // Bottom badge
+        JLabel badge = new JLabel("© 2026 VehicleFlow Systems");
+        badge.setFont(new Font("Segoe UI", Font.PLAIN, 11));
+        badge.setForeground(new Color(120, 170, 200));
+        badge.setAlignmentX(Component.LEFT_ALIGNMENT);
+        inner.add(badge);
 
-        panel.add(Box.createVerticalGlue());
-
+        panel.add(inner, BorderLayout.CENTER);
         return panel;
     }
-    
-    private JLabel createFeatureLabel(String text) {
-        JLabel label = new JLabel("[OK] " + text);
-        label.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        label.setForeground(new Color(220, 240, 255));
-        label.setAlignmentX(Component.CENTER_ALIGNMENT);
-        return label;
-    }
-    
+
+    // ─── Form Panel ───────────────────────────────────────────────────────────
     private JPanel createFormPanel() {
-        JPanel panel = new JPanel(null);
-        panel.setOpaque(false);
+        JPanel outer = new JPanel(new GridBagLayout());
+        outer.setBackground(UITheme.BG_DARK);
 
-        // Title
-        JLabel titleLabel = new JLabel("Welcome Back");
-        titleLabel.setFont(new Font("Segoe UI", Font.BOLD, 28));
-        titleLabel.setForeground(TEXT_PRIMARY);
-        titleLabel.setBounds(40, 50, 350, 40);
-        panel.add(titleLabel);
+        // Card container
+        JPanel card = new JPanel(new GridBagLayout());
+        card.setBackground(UITheme.BG_CARD);
+        card.setBorder(BorderFactory.createCompoundBorder(
+            BorderFactory.createLineBorder(UITheme.BORDER_DEFAULT, 1),
+            new EmptyBorder(38, 44, 38, 44)
+        ));
 
-        // Subtitle
-        JLabel subtitleLabel = new JLabel("Sign in to your account to continue");
-        subtitleLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        subtitleLabel.setForeground(TEXT_SECONDARY);
-        subtitleLabel.setBounds(40, 95, 350, 20);
-        panel.add(subtitleLabel);
+        GridBagConstraints gbc = new GridBagConstraints();
+        gbc.fill = GridBagConstraints.HORIZONTAL;
+        gbc.gridx = 0;
+        gbc.weightx = 1.0;
+        int y = 0;
 
-        // Username Label
-        JLabel userLabel = new JLabel("Username or Email");
-        userLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        userLabel.setForeground(TEXT_PRIMARY);
-        userLabel.setBounds(40, 140, 350, 20);
-        panel.add(userLabel);
+        // Title row
+        JPanel titleRow = new JPanel(new BorderLayout(12, 0));
+        titleRow.setOpaque(false);
+        JLabel icon = new JLabel(UITheme.getIcon("lock", UITheme.ACCENT_CYAN, 30));
+        JPanel titleText = new JPanel();
+        titleText.setLayout(new BoxLayout(titleText, BoxLayout.Y_AXIS));
+        titleText.setOpaque(false);
+        JLabel title = new JLabel("Welcome Back");
+        title.setFont(UITheme.FONT_TITLE);
+        title.setForeground(UITheme.TEXT_PRIMARY);
+        JLabel sub = new JLabel("Sign in to your account");
+        sub.setFont(UITheme.FONT_BODY);
+        sub.setForeground(UITheme.TEXT_SECONDARY);
+        titleText.add(title);
+        titleText.add(Box.createVerticalStrut(2));
+        titleText.add(sub);
+        titleRow.add(icon, BorderLayout.WEST);
+        titleRow.add(titleText, BorderLayout.CENTER);
+        gbc.gridy = y++; gbc.insets = new Insets(0, 0, 28, 0);
+        card.add(titleRow, gbc);
 
-        // Username Field
-        userField = createModernTextField();
-        userField.setHint("Enter username or email");
-        userField.setBounds(40, 165, 370, 45);
-        panel.add(userField);
+        // Username label
+        gbc.gridy = y++; gbc.insets = new Insets(0, 0, 5, 0);
+        card.add(fieldLabel("Username or Email", UITheme.getIcon("user", UITheme.TEXT_SECONDARY, 15)), gbc);
 
-        // Password Label
-        JLabel passLabel = new JLabel("Password");
-        passLabel.setFont(new Font("Segoe UI", Font.PLAIN, 12));
-        passLabel.setForeground(TEXT_PRIMARY);
-        passLabel.setBounds(40, 225, 350, 20);
-        panel.add(passLabel);
+        userField = UITheme.styledTextField("Enter your username");
+        gbc.gridy = y++; gbc.insets = new Insets(0, 0, 16, 0); gbc.ipady = 4;
+        card.add(userField, gbc);
 
-        // Password Field
-        passField = new JPasswordField();
-        stylePasswordField(passField);
-        passField.setBounds(40, 250, 325, 45);
-        panel.add(passField);
+        // Password label
+        gbc.gridy = y++; gbc.insets = new Insets(0, 0, 5, 0); gbc.ipady = 0;
+        card.add(fieldLabel("Password", UITheme.getIcon("lock", UITheme.TEXT_SECONDARY, 15)), gbc);
 
-        // Visible Password Field
-        passVisibleField = createModernTextField();
-        passVisibleField.setBounds(40, 250, 325, 45);
-        passVisibleField.setVisible(false);
-        panel.add(passVisibleField);
+        passField = UITheme.styledPasswordField("Enter your password");
+        JPanel passRow = new JPanel(new BorderLayout(8, 0));
+        passRow.setOpaque(false);
+        passRow.add(passField, BorderLayout.CENTER);
+        passRow.add(buildPasswordToggle(passField), BorderLayout.EAST);
+        gbc.gridy = y++; gbc.insets = new Insets(0, 0, 12, 0); gbc.ipady = 4;
+        card.add(passRow, gbc);
 
-        // Eye Button
-        eyeBtn = createIconButton("Show", PRIMARY_COLOR);
-        eyeBtn.setBounds(375, 250, 35, 45);
-        eyeBtn.addActionListener(e -> togglePasswordVisibility());
-        panel.add(eyeBtn);
+        // Remember me
+        rememberMeCheck = new JCheckBox("Remember me");
+        rememberMeCheck.setOpaque(false);
+        rememberMeCheck.setForeground(UITheme.TEXT_SECONDARY);
+        rememberMeCheck.setFont(UITheme.FONT_SMALL);
+        gbc.gridy = y++; gbc.insets = new Insets(0, 0, 6, 0); gbc.ipady = 0;
+        card.add(rememberMeCheck, gbc);
+        applyRememberedUser();
 
-        // Message Label
-        messageLabel = new JLabel("");
-        messageLabel.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        messageLabel.setForeground(new Color(239, 68, 68));
-        messageLabel.setBounds(40, 305, 370, 20);
-        panel.add(messageLabel);
+        // Message label
+        messageLabel = new JLabel(" ");
+        messageLabel.setFont(UITheme.FONT_SMALL);
+        messageLabel.setForeground(UITheme.ACCENT_RED);
+        gbc.gridy = y++; gbc.insets = new Insets(0, 0, 6, 0);
+        card.add(messageLabel, gbc);
 
-        // Login Button
-        loginBtn = createModernButton("Sign In", PRIMARY_COLOR);
-        loginBtn.setBounds(40, 340, 370, 50);
+        // Login button (full width)
+        loginBtn = UITheme.accentButton("Sign In Securely", UITheme.ACCENT_CYAN,
+                UITheme.getIcon("login", Color.WHITE, 18));
+        loginBtn.setMaximumSize(new Dimension(Integer.MAX_VALUE, 48));
+        loginBtn.setPreferredSize(new Dimension(100, 48));
         loginBtn.addActionListener(e -> handleLogin());
-        panel.add(loginBtn);
+        gbc.gridy = y++; gbc.insets = new Insets(10, 0, 14, 0); gbc.ipady = 6;
+        card.add(loginBtn, gbc);
 
         // Divider
-        JLabel divider = new JLabel("Or");
-        divider.setFont(new Font("Segoe UI", Font.PLAIN, 11));
-        divider.setForeground(TEXT_SECONDARY);
+        JLabel divider = new JLabel("─────────── or ───────────");
+        divider.setFont(UITheme.FONT_SMALL);
+        divider.setForeground(UITheme.TEXT_MUTED);
         divider.setHorizontalAlignment(SwingConstants.CENTER);
-        divider.setBounds(40, 405, 370, 20);
-        panel.add(divider);
+        gbc.gridy = y++; gbc.insets = new Insets(0, 0, 14, 0); gbc.ipady = 0;
+        card.add(divider, gbc);
 
-        // Sign Up Button
-        signUpBtn = createModernButton("Create Account", SECONDARY_COLOR);
-        signUpBtn.setBounds(40, 430, 370, 50);
-        signUpBtn.addActionListener(e -> {
-            ModernSignUpFrame signUpFrame = new ModernSignUpFrame();
-            this.dispose();
+        // Sign up button
+        signUpBtn = UITheme.ghostButton("Create New Account", UITheme.ACCENT_PURPLE);
+        signUpBtn.setPreferredSize(new Dimension(100, 46));
+        signUpBtn.addActionListener(e -> { new ModernSignUpFrame(); dispose(); });
+        gbc.gridy = y++; gbc.insets = new Insets(0, 0, 0, 0); gbc.ipady = 4;
+        card.add(signUpBtn, gbc);
+
+        // Footer note
+        JLabel footer = new JLabel("VehicleFlow · Smart Vehicle Service System", SwingConstants.CENTER);
+        footer.setFont(UITheme.FONT_TINY);
+        footer.setForeground(UITheme.TEXT_MUTED);
+        gbc.gridy = y++; gbc.insets = new Insets(22, 0, 0, 0); gbc.ipady = 0;
+        card.add(footer, gbc);
+
+        // Wrap card in outer with padding
+        GridBagConstraints o = new GridBagConstraints();
+        o.insets = new Insets(30, 40, 30, 40);
+        o.fill = GridBagConstraints.BOTH;
+        o.weightx = 1.0;
+        o.weighty = 1.0;
+        outer.add(card, o);
+
+        return outer;
+    }
+
+    private JLabel fieldLabel(String text, Icon icon) {
+        JLabel label = new JLabel(text, icon, SwingConstants.LEFT);
+        label.setFont(new Font("Segoe UI", Font.BOLD, 13));
+        label.setForeground(UITheme.TEXT_PRIMARY);
+        label.setIconTextGap(8);
+        return label;
+    }
+
+    private JButton buildPasswordToggle(JPasswordField field) {
+        final char hiddenEcho = field.getEchoChar() == 0 ? '\u2022' : field.getEchoChar();
+        JButton btn = new JButton("👁");
+        btn.setFont(new Font("Segoe UI Emoji", Font.PLAIN, 15));
+        btn.setFocusable(false);
+        btn.setOpaque(true);
+        btn.setBackground(darkMode ? UITheme.BG_INPUT : UITheme.LIGHT_BG_INPUT);
+        btn.setForeground(darkMode ? UITheme.TEXT_SECONDARY : UITheme.LIGHT_TEXT_SECONDARY);
+        btn.setBorder(BorderFactory.createLineBorder(darkMode ? UITheme.BORDER_DEFAULT : UITheme.LIGHT_BORDER_DEFAULT));
+        btn.setCursor(Cursor.getPredefinedCursor(Cursor.HAND_CURSOR));
+        btn.setPreferredSize(new Dimension(46, 42));
+        btn.addActionListener(e -> {
+            boolean showing = field.getEchoChar() == '\u0000';
+            field.setEchoChar(showing ? hiddenEcho : '\u0000');
+            btn.setText(showing ? "👁" : "🙈");
         });
-        panel.add(signUpBtn);
+        return btn;
+    }
 
-        // Footer
-        JLabel footerLabel = new JLabel("Vehicle Service Management System");
-        footerLabel.setFont(new Font("Segoe UI", Font.PLAIN, 9));
-        footerLabel.setForeground(TEXT_SECONDARY);
-        footerLabel.setHorizontalAlignment(SwingConstants.CENTER);
-        footerLabel.setBounds(40, 540, 370, 20);
-        panel.add(footerLabel);
+    private static boolean darkMode = UITheme.isDarkMode();
 
-        return panel;
-    }
-    
-    private ModernTextField createModernTextField() {
-        return new ModernTextField();
-    }
-    
-    public static class ModernTextField extends JTextField {
-        private String hint;
-
-        public ModernTextField() {
-            setFont(new Font("Segoe UI", Font.PLAIN, 14));
-            setBackground(CARD_COLOR);
-            setForeground(TEXT_PRIMARY);
-            setCaretColor(PRIMARY_COLOR);
-            setBorder(BorderFactory.createCompoundBorder(
-                BorderFactory.createLineBorder(new Color(71, 85, 105), 1),
-                BorderFactory.createEmptyBorder(8, 12, 8, 12)
-            ));
-        }
-
-        public void setHint(String hint) {
-            this.hint = hint;
-        }
-
-        @Override
-        protected void paintComponent(Graphics g) {
-            super.paintComponent(g);
-            if (getText().isEmpty() && hint != null) {
-                Graphics2D g2d = (Graphics2D) g;
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                g2d.setColor(new Color(148, 163, 184));
-                g2d.setFont(getFont());
-                g2d.drawString(hint, getInsets().left + 5, getHeight() / 2 + 5);
-            }
-        }
-    }
-    
-    private void stylePasswordField(JPasswordField field) {
-        field.setFont(new Font("Segoe UI", Font.PLAIN, 14));
-        field.setBackground(CARD_COLOR);
-        field.setForeground(TEXT_PRIMARY);
-        field.setCaretColor(PRIMARY_COLOR);
-        field.setBorder(BorderFactory.createCompoundBorder(
-            BorderFactory.createLineBorder(new Color(71, 85, 105), 1),
-            BorderFactory.createEmptyBorder(8, 12, 8, 12)
-        ));
-    }
-    
-    private JButton createModernButton(String text, Color color) {
-        JButton button = new JButton(text) {
-            @Override
-            protected void paintComponent(Graphics g) {
-                Graphics2D g2d = (Graphics2D) g;
-                g2d.setRenderingHint(RenderingHints.KEY_ANTIALIASING, RenderingHints.VALUE_ANTIALIAS_ON);
-                
-                if (getModel().isPressed()) {
-                    g2d.setColor(new Color(
-                        Math.max(color.getRed() - 20, 0),
-                        Math.max(color.getGreen() - 20, 0),
-                        Math.max(color.getBlue() - 20, 0)
-                    ));
-                } else if (getModel().isArmed()) {
-                    g2d.setColor(color.brighter());
-                } else {
-                    g2d.setColor(color);
-                }
-                
-                g2d.fillRoundRect(0, 0, getWidth(), getHeight(), 12, 12);
-                
-                super.paintComponent(g);
-            }
-        };
-        button.setFont(new Font("Segoe UI", Font.BOLD, 14));
-        button.setForeground(Color.WHITE);
-        button.setBorderPainted(false);
-        button.setContentAreaFilled(false);
-        button.setFocusPainted(false);
-        button.setCursor(new Cursor(Cursor.HAND_CURSOR));
-        return button;
-    }
-    
-    private JButton createIconButton(String text, Color color) {
-        JButton button = createModernButton(text, color);
-        button.setFont(new Font("Segoe UI", Font.PLAIN, 10));
-        return button;
-    }
-    
-    private void togglePasswordVisibility() {
-        passwordVisible = !passwordVisible;
-        if (passwordVisible) {
-            passVisibleField.setText(new String(passField.getPassword()));
-            passField.setVisible(false);
-            passVisibleField.setVisible(true);
-            eyeBtn.setText("Hide");
-        } else {
-            passField.setText(passVisibleField.getText());
-            passVisibleField.setVisible(false);
-            passField.setVisible(true);
-            eyeBtn.setText("Show");
-        }
-    }
-    
     private void handleLogin() {
         String user = userField.getText().trim();
-        String pass = passwordVisible ? passVisibleField.getText() : new String(passField.getPassword());
-
+        String pass = new String(passField.getPassword());
         if (user.isEmpty() || pass.isEmpty()) {
-            messageLabel.setText("Please enter username/email and password");
-            messageLabel.setForeground(new Color(239, 68, 68));
+            showMessage("Please enter your username and password.", false);
             return;
         }
-
-        org.json.JSONObject result = UserDAO.authenticateUserWithDetails(user, pass);
-        
-        if (result != null && result.has("user_id") && result.getInt("user_id") > 0) {
-            int userId = result.getInt("user_id");
-            String fullName = result.optString("full_name", user);
-            messageLabel.setText("Login successful!");
-            messageLabel.setForeground(new Color(34, 197, 94));
-            
+        User userObj = UserDAO.authenticateUserWithDetails(user, pass);
+        if (userObj != null) {
+            persistRememberedUser(user);
+            showMessage("Success! Redirecting…", true);
+            String role = userObj.getRole();
             this.dispose();
-            new ModernDashboardFrame(fullName, userId);
+            if ("ADMIN".equalsIgnoreCase(role)) {
+                new ModernDashboardFrame(userObj.getFullName(), userObj.getUserId());
+            } else {
+                if (userObj.getCustomerId() <= 0) {
+                    UITheme.showAlert(null, "Profile Incomplete", "Customer profile is incomplete. Please contact admin support.", UITheme.AlertType.ERROR);
+                    new ModernLoginFrame();
+                    return;
+                }
+                new CustomerDashboardFrame(userObj.getFullName(), userObj.getUserId(), userObj.getCustomerId());
+            }
         } else {
-            messageLabel.setText("Invalid credentials. Please try again.");
-            messageLabel.setForeground(new Color(239, 68, 68));
+            showMessage("Invalid username or password. Try again.", false);
             passField.setText("");
-            passVisibleField.setText("");
         }
+    }
+
+    private void showMessage(String msg, boolean success) {
+        messageLabel.setText(msg);
+        messageLabel.setForeground(success ? UITheme.ACCENT_GREEN : UITheme.ACCENT_RED);
+    }
+
+    private void applyRememberedUser() {
+        if (!USER_PREF_FILE.exists()) return;
+        try (BufferedReader r = new BufferedReader(new FileReader(USER_PREF_FILE))) {
+            String u = r.readLine();
+            if (u != null && !u.trim().isEmpty()) {
+                userField.setText(u.trim());
+                rememberMeCheck.setSelected(true);
+            }
+        } catch (Exception ignored) {}
+    }
+
+    private void persistRememberedUser(String user) {
+        if (rememberMeCheck != null && rememberMeCheck.isSelected()) {
+            try (BufferedWriter w = new BufferedWriter(new FileWriter(USER_PREF_FILE))) {
+                w.write(user == null ? "" : user.trim());
+            } catch (Exception ignored) {}
+            return;
+        }
+        if (USER_PREF_FILE.exists()) USER_PREF_FILE.delete();
     }
 }

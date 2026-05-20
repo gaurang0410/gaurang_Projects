@@ -66,14 +66,11 @@ public class Customer {
         this.address = address;
     }
 
+    /**
+     * Returns only the customer's name for display in JComboBox dropdowns.
+     */
     @Override
     public String toString() {
-        return "Customer{" +
-                "customerId=" + customerId +
-                ", name='" + name + '\'' +
-                ", phone='" + phone + '\'' +
-                ", email='" + email + '\'' +
-                ", address='" + address + '\'' +
-                '}';
+        return name != null ? name : "";
     }
 }

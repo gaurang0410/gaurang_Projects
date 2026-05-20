@@ -1,0 +1,12 @@
+*.class
+bin/
+*.jar
+!lib/*.jar
+*.pref
+invoice_*.txt
+backup/
+*.zip
+.vscode/
+.classpath
+.project
+.settings/
