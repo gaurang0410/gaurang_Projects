@@ -1,0 +1,281 @@
+/* ================================================================ */
+/* THEME ENGINE v4 — CarRental Enterprise Dashboard                 */
+/* Strategy: Override BOTH our custom vars AND Bootstrap's --bs-*   */
+/* variables so ALL components adapt correctly in dark/light modes. */
+/* ================================================================ */
+
+/* ── LIGHT MODE (default) ── */
+:root,
+[data-theme="light"] {
+
+    /* ── Our Custom Tokens ── */
+    --bg-primary:   #f8fafc;
+    --bg-secondary: #f1f5f9;
+    --surface-color:#ffffff;
+    --card-color:   #ffffff;
+    --card-bg:      #ffffff;
+    --bg-body:      #f8fafc;
+
+    --text-primary:   #111827;
+    --text-secondary: #374151;
+    --text-muted:     #6b7280;
+    --text-inverse:   #ffffff;
+
+    --border-color:  #e2e8f0;
+    --border-subtle: #e9eef5;
+
+    --accent-color: #3B82F6;
+    --accent-hover: #2563EB;
+    --accent-glow:  rgba(59,130,246,.15);
+    --primary-glow: rgba(59,130,246,.15);
+    --primary-light: rgba(59,130,246,.12);
+
+    --chart-grid:   rgba(15,23,42,0.08);
+    --chart-tick:   #64748B;
+    --tooltip-bg:   #ffffff;
+    --tooltip-title:#0f172a;
+    --tooltip-body: #475569;
+
+    --primary: #3B82F6;
+    --success: #10B981;
+    --warning: #F59E0B;
+    --danger:  #EF4444;
+
+    --input-bg:     #ffffff;
+    --input-border: #cbd5e1;
+
+    --sidebar-bg:          #ffffff;
+    --sidebar-border:      #e2e8f0;
+    --sidebar-text:        #374151;
+    --sidebar-text-hover:  #0f172a;
+    --sidebar-hover-bg:    #f1f5f9;
+    --sidebar-active-bg:   #eff6ff;
+    --sidebar-active-text: #2563eb;
+
+    --sidebar-width: 264px;
+    --sp-1:4px; --sp-2:8px; --sp-3:12px; --sp-4:16px;
+    --sp-5:20px; --sp-6:24px; --sp-8:32px;
+    --radius-xs:4px; --radius-sm:8px; --radius-md:12px;
+    --radius-lg:16px; --radius-xl:20px; --radius-full:9999px;
+
+    --shadow-sm:   0 1px 2px rgba(0,0,0,.05);
+    --shadow-md:   0 4px 6px -1px rgba(0,0,0,.1), 0 2px 4px -1px rgba(0,0,0,.06);
+    --shadow-lg:   0 10px 15px -3px rgba(0,0,0,.1), 0 4px 6px -2px rgba(0,0,0,.05);
+    --shadow-card: 0 1px 3px rgba(0,0,0,.05), 0 1px 2px rgba(0,0,0,.03);
+
+    --t-fast: .15s ease;
+    --t-base: .25s ease;
+    --transition-base: .25s ease;
+
+    /* ── Bootstrap Variable Overrides (Light) ── */
+    --bs-body-color:            #111827;
+    --bs-body-color-rgb:        17,24,39;
+    --bs-body-bg:               #f8fafc;
+    --bs-secondary-color:       #374151;
+    --bs-tertiary-color:        #6b7280;
+    --bs-emphasis-color:        #111827;
+    --bs-secondary-bg:          #f1f5f9;
+    --bs-tertiary-bg:           #e2e8f0;
+    --bs-border-color:          #e2e8f0;
+    --bs-border-color-translucent: rgba(0,0,0,.09);
+
+    --bs-card-bg:                     #ffffff;
+    --bs-card-border-color:           #e2e8f0;
+    --bs-card-cap-bg:                 transparent;
+
+    --bs-table-color:                 #374151;
+    --bs-table-bg:                    transparent;
+    --bs-table-border-color:          #e9eef5;
+    --bs-table-striped-bg:            rgba(0,0,0,.02);
+    --bs-table-striped-color:         #374151;
+    --bs-table-hover-bg:              rgba(59,130,246,.06);
+    --bs-table-hover-color:           #111827;
+
+    --bs-modal-bg:                    #ffffff;
+    --bs-modal-border-color:          #e2e8f0;
+
+    --bs-dropdown-bg:                 #ffffff;
+    --bs-dropdown-border-color:       #e2e8f0;
+    --bs-dropdown-color:              #374151;
+    --bs-dropdown-link-color:         #374151;
+    --bs-dropdown-link-hover-color:   #111827;
+    --bs-dropdown-link-hover-bg:      #f1f5f9;
+    --bs-dropdown-link-active-color:  #ffffff;
+    --bs-dropdown-link-active-bg:     #3B82F6;
+
+    --bs-form-control-bg:             #ffffff;
+    --bs-form-control-disabled-bg:    #f1f5f9;
+    --bs-input-bg:                    #ffffff;
+    --bs-input-color:                 #111827;
+    --bs-input-border-color:          #cbd5e1;
+    --bs-input-placeholder-color:     #6b7280;
+
+    --bs-link-color:                  #3B82F6;
+    --bs-link-hover-color:            #2563EB;
+    --bs-code-color:                  #8B5CF6;
+
+    --bs-list-group-bg:               #ffffff;
+    --bs-list-group-border-color:     #e2e8f0;
+    --bs-list-group-color:            #374151;
+    --bs-list-group-action-color:     #374151;
+    --bs-list-group-action-hover-bg:  #f1f5f9;
+    --bs-list-group-action-hover-color:#111827;
+    --bs-list-group-active-bg:        #3B82F6;
+    --bs-list-group-active-border-color:#3B82F6;
+}
+
+/* ── DARK MODE ── */
+[data-theme="dark"] {
+
+    /* ── Our Custom Tokens ── */
+    --bg-primary:   #0b1120;
+    --bg-secondary: #111827;
+    --surface-color:#172033;
+    --card-color:   #1a2640;
+    --card-bg:      #1a2640;
+    --bg-body:      #0b1120;
+
+    --text-primary:   #f8fafc;
+    --text-secondary: #d1d5db;
+    --text-muted:     #9ca3af;
+    --text-inverse:   #ffffff;
+
+    --border-color:  #2d3f5c;
+    --border-subtle: #1e2d45;
+    --primary-light: rgba(59,130,246,.2);
+
+    --chart-grid:   rgba(148,163,184,0.2);
+    --chart-tick:   #9ca3af;
+    --tooltip-bg:   #0f172a;
+    --tooltip-title:#f8fafc;
+    --tooltip-body: #cbd5e1;
+
+    --input-bg:     #111827;
+    --input-border: #3d5070;
+
+    --sidebar-bg:          #172033;
+    --sidebar-border:      #2d3f5c;
+    --sidebar-text:        #c4cdd9;
+    --sidebar-text-hover:  #f8fafc;
+    --sidebar-hover-bg:    #1e2d45;
+    --sidebar-active-bg:   rgba(59,130,246,.18);
+    --sidebar-active-text: #60a5fa;
+
+    --shadow-sm:   0 1px 2px rgba(0,0,0,.4);
+    --shadow-md:   0 4px 6px -1px rgba(0,0,0,.5);
+    --shadow-lg:   0 10px 15px -3px rgba(0,0,0,.6);
+    --shadow-card: 0 1px 3px rgba(0,0,0,.5);
+
+    /* ── Bootstrap Variable Overrides (Dark) ── */
+    /* These are the ACTUAL variables Bootstrap 5.3 reads internally. */
+    /* Without these, all Bootstrap components ignore our theme.       */
+
+    --bs-body-color:            #d1d5db;   /* default body text */
+    --bs-body-color-rgb:        209,213,219;
+    --bs-body-bg:               #0b1120;
+    --bs-secondary-color:       #9ca3af;
+    --bs-tertiary-color:        #6b7280;
+    --bs-emphasis-color:        #f8fafc;   /* strong/em text */
+    --bs-secondary-bg:          #111827;
+    --bs-tertiary-bg:           #1a2640;
+    --bs-border-color:          #2d3f5c;
+    --bs-border-color-translucent: rgba(255,255,255,.1);
+
+    /* Cards */
+    --bs-card-bg:                     #1a2640;
+    --bs-card-border-color:           #2d3f5c;
+    --bs-card-cap-bg:                 transparent;
+    --bs-card-color:                  #d1d5db;
+
+    /* Tables — this is what controls .table td color in Bootstrap */
+    --bs-table-color:                 #d1d5db;   /* default td text */
+    --bs-table-color-type:            initial;
+    --bs-table-bg:                    transparent;
+    --bs-table-border-color:          #2d3f5c;
+    --bs-table-striped-bg:            rgba(255,255,255,.025);
+    --bs-table-striped-color:         #d1d5db;
+    --bs-table-hover-bg:              rgba(255,255,255,.04);
+    --bs-table-hover-color:           #f8fafc;
+    --bs-table-active-bg:             rgba(255,255,255,.06);
+    --bs-table-active-color:          #f8fafc;
+
+    /* Modals */
+    --bs-modal-bg:                    #172033;
+    --bs-modal-border-color:          #2d3f5c;
+    --bs-modal-header-border-color:   #2d3f5c;
+    --bs-modal-footer-border-color:   #2d3f5c;
+    --bs-modal-color:                 #d1d5db;
+
+    /* Dropdowns */
+    --bs-dropdown-bg:                 #1a2640;
+    --bs-dropdown-border-color:       #2d3f5c;
+    --bs-dropdown-color:              #d1d5db;
+    --bs-dropdown-link-color:         #d1d5db;
+    --bs-dropdown-link-hover-color:   #f8fafc;
+    --bs-dropdown-link-hover-bg:      #111827;
+    --bs-dropdown-link-active-color:  #ffffff;
+    --bs-dropdown-link-active-bg:     #3B82F6;
+    --bs-dropdown-divider-bg:         #2d3f5c;
+
+    /* Forms / Inputs */
+    --bs-form-control-bg:             #111827;
+    --bs-form-control-disabled-bg:    #0b1120;
+    --bs-input-bg:                    #111827;
+    --bs-input-color:                 #f8fafc;
+    --bs-input-border-color:          #3d5070;
+    --bs-input-placeholder-color:     #6b7280;
+    --bs-input-focus-border-color:    #3B82F6;
+    --bs-input-focus-box-shadow:      0 0 0 .25rem rgba(59,130,246,.25);
+
+    /* List groups */
+    --bs-list-group-bg:               #1a2640;
+    --bs-list-group-border-color:     #2d3f5c;
+    --bs-list-group-color:            #d1d5db;
+    --bs-list-group-action-color:     #d1d5db;
+    --bs-list-group-action-hover-bg:  #111827;
+    --bs-list-group-action-hover-color:#f8fafc;
+    --bs-list-group-active-bg:        #3B82F6;
+    --bs-list-group-active-border-color:#3B82F6;
+
+    /* Pagination */
+    --bs-pagination-bg:               #1a2640;
+    --bs-pagination-border-color:     #2d3f5c;
+    --bs-pagination-color:            #9ca3af;
+    --bs-pagination-hover-bg:         #111827;
+    --bs-pagination-hover-color:      #f8fafc;
+    --bs-pagination-hover-border-color:#2d3f5c;
+    --bs-pagination-active-bg:        #3B82F6;
+    --bs-pagination-active-border-color:#3B82F6;
+    --bs-pagination-disabled-bg:      #1a2640;
+    --bs-pagination-disabled-color:   #6b7280;
+    --bs-pagination-disabled-border-color:#2d3f5c;
+
+    /* Nav / Tabs */
+    --bs-nav-tabs-border-color:       #2d3f5c;
+    --bs-nav-tabs-link-hover-border-color:#2d3f5c;
+    --bs-nav-tabs-link-active-color:  #f8fafc;
+    --bs-nav-tabs-link-active-bg:     #1a2640;
+    --bs-nav-tabs-link-active-border-color:#2d3f5c;
+    --bs-nav-link-color:              #9ca3af;
+    --bs-nav-link-hover-color:        #f8fafc;
+
+    /* Accordion */
+    --bs-accordion-bg:                #1a2640;
+    --bs-accordion-border-color:      #2d3f5c;
+    --bs-accordion-color:             #d1d5db;
+    --bs-accordion-btn-color:         #d1d5db;
+    --bs-accordion-btn-bg:            #1a2640;
+    --bs-accordion-active-color:      #60a5fa;
+    --bs-accordion-active-bg:         rgba(59,130,246,.08);
+
+    /* Badges default bg stays vibrant; text always white */
+
+    /* Links */
+    --bs-link-color:                  #60a5fa;
+    --bs-link-hover-color:            #93c5fd;
+
+    /* Alerts */
+    --bs-alert-bg:                    #172033;
+    --bs-alert-border-color:          #2d3f5c;
+    --bs-alert-color:                 #d1d5db;
+}
